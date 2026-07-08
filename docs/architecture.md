@@ -48,3 +48,16 @@ La premiere brique de l'orchestration definit des contrats Python simples :
 Ces contrats permettent a Adrien et Yacine de travailler en parallele. Le moteur
 de retrieval pourra etre implemente plus tard tant qu'il respecte la methode
 `search(question, top_k)`.
+
+## Optimisation retenue: recherche hybride
+
+L'optimisation bonus recommandee est la recherche hybride, car elle combine :
+
+- la recherche vectorielle pour les questions en langage naturel ;
+- BM25 pour les mots-cles exacts et les references d'articles ;
+- un score final du type `alpha * vector_score + beta * bm25_score`.
+
+Le calcul hybride doit rester dans `src/retrieval`. L'orchestrateur RAG ne doit
+pas connaitre les details de calcul : il consomme seulement des `RetrievedChunk`
+tries par score final. Les details facultatifs des scores peuvent etre exposes
+dans `score_details` pour l'interface et les tests.

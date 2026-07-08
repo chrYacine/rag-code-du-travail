@@ -19,6 +19,11 @@ class FakeRetrievalEngine:
                 content="Le contrat de travail peut etre rompu selon les conditions prevues.",
                 score=0.91,
                 metadata={"article_id": "L1234-1"},
+                score_details={
+                    "vector_score": 0.88,
+                    "bm25_score": 0.95,
+                    "hybrid_score": 0.91,
+                },
             )
         ]
 
@@ -58,6 +63,7 @@ def test_orchestrator_returns_answer_sources_and_legal_warning() -> None:
     assert "L1234-1" in result.answer
     assert LEGAL_WARNING in result.answer
     assert result.sources[0].article_id == "L1234-1"
+    assert result.sources[0].score_details["hybrid_score"] == 0.91
     assert retrieval_engine.last_top_k == 3
     assert llm_client.messages[0]["role"] == "system"
 

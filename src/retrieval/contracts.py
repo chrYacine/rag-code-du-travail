@@ -11,6 +11,7 @@ class RetrievedChunk:
     content: str
     score: float
     metadata: Mapping[str, str] = field(default_factory=dict)
+    score_details: Mapping[str, float] = field(default_factory=dict)
 
     @property
     def article_id(self) -> str:
@@ -21,4 +22,9 @@ class RetrievalEngine(Protocol):
     """Contract implemented by the retrieval component owned by indexing/retrieval."""
 
     def search(self, question: str, top_k: int) -> Sequence[RetrievedChunk]:
-        """Return the most relevant chunks for a user question."""
+        """Return the most relevant chunks for a user question.
+
+        The final `score` may come from vector retrieval, BM25 retrieval, or a
+        hybrid formula such as alpha * vector_score + beta * bm25_score.
+        Optional score components can be exposed through `score_details`.
+        """
