@@ -1,0 +1,16 @@
+# Core
+numpy
+python-dotenv
+requests
+
+# Embeddings and vector search
+sentence-transformers
+faiss-cpu
+
+# UI
+streamlit
+
+# Quality and tests
+pytest
+ruff
+black
