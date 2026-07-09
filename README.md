@@ -265,3 +265,24 @@ python src/retrieval/bm25_retriever.py "Que dit l'article L1237-11 ?" --top-k 3
 - Ajouter le retrieval vectoriel puis BM25/hybride.
 - Automatiser la mise a jour du corpus.
 - Evaluer la qualite du retrieval sur des questions connues.
+
+## Lancer l'assistant en mode vectoriel
+
+Avant le premier lancement, créer le fichier `.env` local à partir de
+`.env.example`, télécharger le corpus puis construire les chunks et l'index :
+
+```bash
+python src/download_code_travail.py
+python src/chunk_code_travail.py
+python src/retrieval/vector_store.py
+```
+
+Lancer ensuite l'interface :
+
+```bash
+streamlit run src/ui/app.py
+```
+
+Le service est actuellement assemblé avec `VectorRetrievalEngine`. Le moteur
+hybride remplacera cette dépendance dans la factory lorsqu'il sera disponible,
+sans ajouter d'appel direct à FAISS ou Groq dans l'interface.

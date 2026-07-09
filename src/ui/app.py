@@ -14,16 +14,13 @@ class RAGService(Protocol):
         """Return a legal-information answer and its retrieved sources."""
 
 
-def render_app(service: RAGService) -> None:
+def render_app(service: RAGService, *, configure_page: bool = True) -> None:
     """Render the UI while keeping infrastructure outside this module."""
 
     import streamlit as st
 
-    st.set_page_config(
-        page_title="Assistant Code du travail",
-        page_icon="⚖️",
-        layout="centered",
-    )
+    if configure_page:
+        _configure_page(st)
     st.title("Assistant Code du travail")
     st.caption(
         "Posez une question sur le droit du travail français. "
@@ -89,18 +86,34 @@ def render_app(service: RAGService) -> None:
 
 
 def main() -> None:
-    """Display a clear message until the integration layer injects the service."""
+    """Build the cached RAG service and launch the Streamlit application."""
 
     import streamlit as st
+
+    _configure_page(st)
+    try:
+        from src.ui.runtime import get_rag_service
+
+        with st.spinner("Chargement du moteur RAG..."):
+            service = get_rag_service()
+    except Exception:
+        logger.exception("Échec de l'initialisation du service RAG.")
+        st.error(
+            "Le moteur RAG n'a pas pu démarrer. Vérifiez la clé Groq, "
+            "les chunks et l'index FAISS."
+        )
+        return
+
+    render_app(service, configure_page=False)
+
+
+def _configure_page(st: object) -> None:
+    """Apply the Streamlit page configuration before any other UI call."""
 
     st.set_page_config(
         page_title="Assistant Code du travail",
         page_icon="⚖️",
         layout="centered",
-    )
-    st.error(
-        "Le service RAG n'est pas encore configuré. "
-        "Terminez l'intégration du retrieval avant de lancer l'interface."
     )
 
 
