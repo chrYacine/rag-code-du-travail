@@ -43,7 +43,13 @@ def test_generate_returns_assistant_content(
         )
 
     monkeypatch.setattr(requests, "post", fake_post)
-    client = GroqClient(api_key="test-key", model="test-model", timeout=12)
+    client = GroqClient(
+        api_key="test-key",
+        model="test-model",
+        timeout=12,
+        temperature=0.2,
+        max_tokens=500,
+    )
 
     result = client.generate([{"role": "user", "content": "Ma question"}])
 
@@ -51,6 +57,8 @@ def test_generate_returns_assistant_content(
     assert captured["json"] == {
         "model": "test-model",
         "messages": [{"role": "user", "content": "Ma question"}],
+        "temperature": 0.2,
+        "max_tokens": 500,
     }
     assert captured["headers"]["Authorization"] == "Bearer test-key"
     assert captured["timeout"] == 12
@@ -76,6 +84,27 @@ def test_empty_messages_are_rejected() -> None:
 
     with pytest.raises(GroqClientError, match="message"):
         client.generate([])
+
+
+@pytest.mark.parametrize(
+    ("temperature", "max_tokens", "expected_message"),
+    [
+        (-0.1, 100, "GROQ_TEMPERATURE"),
+        (2.1, 100, "GROQ_TEMPERATURE"),
+        (0.1, 0, "GROQ_MAX_TOKENS"),
+    ],
+)
+def test_invalid_generation_settings_are_rejected(
+    temperature: float,
+    max_tokens: int,
+    expected_message: str,
+) -> None:
+    with pytest.raises(GroqClientError, match=expected_message):
+        GroqClient(
+            api_key="test-key",
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
 
 
 def test_timeout_is_wrapped_without_exposing_secret(
