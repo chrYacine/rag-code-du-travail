@@ -36,6 +36,7 @@ def test_build_source_views_exposes_legal_metadata_and_scores() -> None:
             "theme": "duree du travail",
             "section": "Code du travail > Durée du travail",
             "primary_source": "Légifrance",
+            "retrieved_at": "2026-07-09T10:00:00+00:00",
         },
         score_details={
             "vector_score": 0.8,
@@ -50,6 +51,7 @@ def test_build_source_views_exposes_legal_metadata_and_scores() -> None:
     assert views[0].article_id == "L3121-1"
     assert views[0].legi_id == "LEGIARTI0001"
     assert views[0].source == "Légifrance"
+    assert views[0].retrieved_at == "2026-07-09T10:00:00+00:00"
     assert views[0].score == "0.9123"
     assert views[0].score_details == {
         "vector_score": "0.8000",

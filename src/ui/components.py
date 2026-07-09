@@ -18,6 +18,7 @@ class SourceView:
     section: str = ""
     legi_id: str = ""
     source: str = ""
+    retrieved_at: str = ""
 
 
 def answer_without_duplicate_warning(answer: RAGAnswer) -> str:
@@ -46,6 +47,7 @@ def _build_source_view(chunk: RetrievedChunk) -> SourceView:
         section=chunk.metadata.get("section", ""),
         legi_id=chunk.metadata.get("legi_id", ""),
         source=chunk.metadata.get("primary_source") or chunk.metadata.get("source", ""),
+        retrieved_at=chunk.metadata.get("retrieved_at", ""),
     )
 
 

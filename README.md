@@ -52,6 +52,74 @@ python -m ruff check .
 python -m black --check .
 ```
 
+## Réponses aux questions de réflexion
+
+### 1. Granularité du chunking
+
+Indexer un article séparément préserve son unité juridique, permet une citation précise et évite
+qu'un regroupement trop long dilue le vocabulaire utile à l'embedding. Cette stratégie facilite
+aussi la déduplication par `article_id`. Son inconvénient est qu'un article peut dépendre de
+définitions ou d'exceptions situées dans des articles voisins.
+
+Regrouper une section fournit davantage de contexte et aide à comprendre les renvois, mais produit
+des chunks plus longs, moins ciblés et difficiles à citer sans ambiguïté. Cela augmente aussi le
+risque de transmettre au LLM des dispositions non pertinentes.
+
+Le projet retient donc **un chunk par article complet**, sans coupure interne. Le fil d'Ariane de la
+section est conservé dans les métadonnées. Une approche hybride reste envisageable : retrouver les
+articles individuellement, puis enrichir le contexte avec les articles voisins ou les références
+explicitement citées. L'amélioration actuelle combine plusieurs signaux de recherche (FAISS, BM25,
+décomposition et HyDE) tout en gardant l'article comme unité documentaire.
+
+### 2. Traçabilité des articles
+
+Le numéro lisible apparaît à deux endroits :
+
+- dans `content`, sous la forme `Article L3121-1`, donc dans le texte embeddé ;
+- dans `metadata["article_id"]`, utilisé pour la déduplication, les citations et l'affichage.
+
+L'identifiant technique Légifrance est conservé dans `metadata["legi_id"]`. Le prompt transmet
+explicitement l'identifiant de chaque source et interdit de citer un numéro absent du contexte. Une
+citation générée reste néanmoins une sortie probabiliste : l'interface affiche les chunks sources
+réels afin que l'utilisateur puisse vérifier la correspondance. Pour un usage juridique, la
+disposition doit toujours être contrôlée sur Légifrance.
+
+### 3. Fraîcheur et risque d'obsolescence
+
+Le téléchargement enregistre `retrieved_at` et un hash SHA256 du corpus. Le workflow quotidien
+compare ce hash à la source distante et évite une réindexation lorsqu'elle est inchangée. La date de
+récupération est propagée dans les métadonnées des chunks, le contexte du LLM et l'affichage des
+sources.
+
+Cette date prouve quand la copie technique a été récupérée, pas qu'elle constitue une consolidation
+juridique officielle à cet instant. Le système indique donc que les textes peuvent avoir évolué et
+documente que SocialGouv/legi-data est une source technique, tandis que Légifrance reste la source
+juridique à vérifier. Une version de production devrait utiliser l'API PISTE et surveiller les
+dates d'entrée en vigueur.
+
+### 4. Réponses conditionnelles
+
+Le prompt demande de ne pas masquer les conditions dépendant de l'effectif, de la convention
+collective, de l'ancienneté ou de la situation du salarié. Lorsque le corpus permet une règle
+générale, l'assistant la présente avec des réserves explicites. Si une information manquante change
+la réponse, il demande cette précision au lieu de choisir arbitrairement un cas.
+
+Les conventions collectives ne font pas partie de ce corpus. L'assistant doit le signaler et ne
+doit pas présenter la règle générale du Code comme nécessairement plus favorable ou exhaustive.
+
+### 5. Frontière du conseil juridique
+
+Une question directement descriptive, telle que la durée légale ou le contenu d'un article, peut
+recevoir une synthèse fondée sur les chunks retrouvés. Une demande comme « mon licenciement est-il
+abusif ? » exige en revanche des faits, des preuves, une procédure et parfois de la jurisprudence
+absents du corpus.
+
+Dans ce second cas, le prompt interdit de rendre un verdict individuel. L'assistant expose les
+critères généraux présents dans le Code, précise les informations manquantes et recommande une
+vérification par un avocat, un syndicat ou un service compétent. L'orchestrateur ajoute
+systématiquement un avertissement indiquant que la réponse est informative et ne remplace pas un
+professionnel du droit.
+
 ## Etape corpus: recuperation du Code du travail
 
 Cette etape correspond uniquement a la recuperation et a la preparation initiale du corpus. Elle ne couvre pas encore tout le pipeline RAG. Elle prepare la suite: chunking par article, embeddings, indexation vectorielle, evaluation et mise a jour.
@@ -316,17 +384,12 @@ Les cas de validation du retrieval sont documentes dans
 `docs/retrieval_validation.md`. Les notes techniques pour le README final et le
 compte rendu sont dans `docs/retrieval_technical_notes.md`.
 
-### Suite prevue
+### État du pipeline
 
-- Finaliser l'extraction des articles.
-- Filtrer les articles par themes.
-- Chunker par article sans casser les articles.
-- Enrichir les chunks avec les metadonnees.
-- Generer les embeddings.
-- Indexer dans une base vectorielle persistante.
-- Ajouter le retrieval vectoriel puis BM25/hybride.
-- Automatiser la mise a jour du corpus.
-- Evaluer la qualite du retrieval sur des questions connues.
+L'extraction, le filtrage thématique, le chunking, la base FAISS persistante et le retrieval
+hybride sont implémentés. La mise à jour du corpus est automatisable. Le travail restant avant le
+rendu porte principalement sur l'évaluation documentée du retrieval et la validation de bout en
+bout sur une installation propre.
 
 ## Lancer l'assistant RAG hybride
 
