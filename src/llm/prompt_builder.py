@@ -5,7 +5,6 @@ from typing import Mapping, Sequence
 
 from src.retrieval.contracts import RetrievedChunk
 
-
 SYSTEM_PROMPT = """You are a legal information assistant specialized in French labor law.
 Use only the provided context to answer.
 Always cite the article identifiers used.

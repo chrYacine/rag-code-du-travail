@@ -10,7 +10,7 @@ from src.query_processing.hyde_generator import HyDEGenerator
 from src.query_processing.question_decomposer import QuestionDecomposer
 from src.rag.orchestrator import RAGOrchestrator
 from src.retrieval.contracts import RetrievalEngine
-from src.retrieval.vector_retriever import VectorRetrievalEngine
+from src.retrieval.hybrid_retriever import HybridRetrievalEngine
 
 
 def build_rag_service(
@@ -26,7 +26,7 @@ def build_rag_service(
         raise ValueError("TOP_K doit être supérieur ou égal à 1.")
 
     llm = llm_client or GroqClient()
-    retriever = retrieval_engine or VectorRetrievalEngine()
+    retriever = retrieval_engine or HybridRetrievalEngine()
     moderator = input_moderator or PromptInjectionModerator()
 
     return RAGOrchestrator(

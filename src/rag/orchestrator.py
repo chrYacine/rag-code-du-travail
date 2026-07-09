@@ -6,9 +6,13 @@ from typing import Sequence
 from src.llm.contracts import LLMClient
 from src.llm.prompt_builder import PromptBuilder
 from src.moderation.contracts import UserInputModerator
-from src.query_processing.hyde_generator import HyDEGenerator
+from src.query_processing.hyde_generator import HyDEGenerator, HyDEQuery
 from src.query_processing.question_decomposer import QuestionDecomposer
-from src.retrieval.contracts import RetrievedChunk, RetrievalEngine
+from src.retrieval.contracts import (
+    QueryAwareRetrievalEngine,
+    RetrievedChunk,
+    RetrievalEngine,
+)
 from src.retrieval.result_aggregator import ResultAggregator
 
 LEGAL_WARNING = (
@@ -70,22 +74,35 @@ class RAGOrchestrator:
 
         result_sets: list[Sequence[RetrievedChunk]] = []
         for sub_question in sub_questions:
-            queries = self._build_retrieval_queries(sub_question)
-            for query in queries:
+            expanded = self._expand_query(sub_question)
+            if isinstance(self.retrieval_engine, QueryAwareRetrievalEngine):
                 result_sets.append(
-                    self.retrieval_engine.search(
-                        question=query,
+                    self.retrieval_engine.search_with_queries(
+                        original_query=expanded.original_query,
+                        vector_query=expanded.vector_query,
                         top_k=self.top_k,
                     )
+                )
+                continue
+
+            for query in self._distinct_queries(expanded):
+                result_sets.append(
+                    self.retrieval_engine.search(question=query, top_k=self.top_k)
                 )
 
         return self.result_aggregator.aggregate(result_sets, top_k=self.top_k)
 
-    def _build_retrieval_queries(self, question: str) -> list[str]:
+    def _expand_query(self, question: str) -> HyDEQuery:
         if not self.hyde_generator:
-            return [question]
+            return HyDEQuery(
+                original_query=question,
+                vector_query=question,
+                used_hyde=False,
+            )
+        return self.hyde_generator.expand(question)
 
-        expanded = self.hyde_generator.expand(question)
+    @staticmethod
+    def _distinct_queries(expanded: HyDEQuery) -> list[str]:
         queries = [expanded.original_query]
         if (
             expanded.vector_query

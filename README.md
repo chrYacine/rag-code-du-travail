@@ -306,7 +306,7 @@ python src/retrieval/hybrid_retriever.py "Que dit l'article L1237-11 ?" --top-k 
 - Automatiser la mise a jour du corpus.
 - Evaluer la qualite du retrieval sur des questions connues.
 
-## Lancer l'assistant en mode vectoriel
+## Lancer l'assistant RAG hybride
 
 Avant le premier lancement, créer le fichier `.env` local à partir de
 `.env.example`, télécharger le corpus puis construire les chunks et l'index :
@@ -323,6 +323,7 @@ Lancer ensuite l'interface :
 streamlit run src/ui/app.py
 ```
 
-Le service est actuellement assemblé avec `VectorRetrievalEngine`. Le moteur
-hybride remplacera cette dépendance dans la factory lorsqu'il sera disponible,
-sans ajouter d'appel direct à FAISS ou Groq dans l'interface.
+Le service est assemblé avec `HybridRetrievalEngine`. Pour chaque sous-question,
+la requête originale alimente BM25 et la requête HyDE alimente FAISS. Les
+résultats sont fusionnés avant la génération de la réponse, sans appel direct à
+FAISS ou Groq dans l'interface.

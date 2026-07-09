@@ -21,6 +21,27 @@ class FakeRetrievalEngine:
 
 
 @dataclass
+class FakeHybridRetrievalEngine:
+    results: Sequence[RetrievedChunk]
+    search_calls: list[tuple[str, int]] = field(default_factory=list)
+    query_calls: list[tuple[str, str, int]] = field(default_factory=list)
+
+    def search(self, question: str, top_k: int) -> Sequence[RetrievedChunk]:
+        self.search_calls.append((question, top_k))
+        return self.results
+
+    def search_with_queries(
+        self,
+        *,
+        original_query: str,
+        vector_query: str,
+        top_k: int,
+    ) -> Sequence[RetrievedChunk]:
+        self.query_calls.append((original_query, vector_query, top_k))
+        return self.results
+
+
+@dataclass
 class FakeQuestionDecomposer:
     sub_questions: list[str]
     calls: list[str] = field(default_factory=list)
@@ -167,4 +188,30 @@ def test_hyde_fallback_does_not_duplicate_same_retrieval_query() -> None:
     result = orchestrator.answer(question)
 
     assert retriever.calls == [(question, 2)]
+    assert [source.article_id for source in result.sources] == ["L3121-1"]
+
+
+def test_query_aware_retriever_receives_original_and_hyde_once() -> None:
+    question = "Comment fonctionnent les heures supplémentaires ?"
+    retriever = FakeHybridRetrievalEngine([make_chunk("L3121-1", 0.95)])
+    hyde = FakeHyDEGenerator()
+    orchestrator = RAGOrchestrator(
+        retrieval_engine=retriever,
+        llm_client=RecordingLLMClient(),
+        input_moderator=AllowAllModerator(),
+        prompt_builder=PromptBuilder(),
+        top_k=3,
+        hyde_generator=hyde,  # type: ignore[arg-type]
+    )
+
+    result = orchestrator.answer(question)
+
+    assert retriever.query_calls == [
+        (
+            question,
+            f"Document hypothétique : {question}",
+            3,
+        )
+    ]
+    assert retriever.search_calls == []
     assert [source.article_id for source in result.sources] == ["L3121-1"]
