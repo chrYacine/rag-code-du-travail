@@ -77,6 +77,8 @@ def render_app(service: RAGService, *, configure_page: bool = True) -> None:
                 st.write(f"**Source :** {source.source}")
             if source.legi_id:
                 st.write(f"**Identifiant Légifrance :** {source.legi_id}")
+            if source.retrieved_at:
+                st.write(f"**Corpus récupéré le :** {source.retrieved_at}")
             if source.score_details:
                 formatted_scores = " · ".join(
                     f"{name}: {value}" for name, value in source.score_details.items()
