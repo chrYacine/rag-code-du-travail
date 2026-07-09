@@ -254,6 +254,46 @@ Commande de verification locale:
 python src/retrieval/bm25_retriever.py "Que dit l'article L1237-11 ?" --top-k 3
 ```
 
+### Retrieval hybride
+
+Le moteur `HybridRetrievalEngine` combine les resultats de `VectorRetrievalEngine` et `BM25RetrievalEngine`. Les scores FAISS et BM25 sont normalises avant fusion, puis le score final est calcule avec:
+
+```text
+hybrid_score = alpha * vector_score + beta * bm25_score
+```
+
+Les valeurs par defaut sont configurees par `HYBRID_ALPHA` et `HYBRID_BETA`. Le contrat principal reste compatible avec l'orchestration actuelle:
+
+```python
+retrieval_engine.search(question: str, top_k: int)
+```
+
+Pour l'integration finale avec HyDE, le moteur expose aussi:
+
+```python
+retrieval_engine.search_with_queries(
+    original_query="question originale",
+    vector_query="passage HyDE ou question vectorielle",
+    top_k=5,
+)
+```
+
+Dans ce mode:
+
+- `original_query` est envoyee a BM25;
+- `vector_query` est envoyee a FAISS;
+- les resultats sont deduplicates par `article_id`, puis `legi_id`;
+- `score` contient le `hybrid_score`;
+- `score_details` contient `vector_score`, `bm25_score` et `hybrid_score`.
+
+Quand la question contient explicitement un numero d'article, par exemple `L1237-11`, l'article correspondant est priorise dans le score hybride final. Cela evite qu'une similarite vectorielle generale masque une demande juridique exacte.
+
+Commande de verification locale:
+
+```bash
+python src/retrieval/hybrid_retriever.py "Que dit l'article L1237-11 ?" --top-k 3
+```
+
 ### Suite prevue
 
 - Finaliser l'extraction des articles.
