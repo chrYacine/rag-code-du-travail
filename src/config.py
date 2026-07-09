@@ -3,7 +3,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
 
 CODE_TRAVAIL_URL = (
     "https://raw.githubusercontent.com/SocialGouv/legi-data/master/"
@@ -30,3 +33,7 @@ VECTOR_CHUNKS_METADATA_FILE = VECTOR_STORE_DIR / "chunks_metadata.json"
 VECTOR_STORE_METADATA_FILE = VECTOR_STORE_DIR / "vector_store_metadata.json"
 
 REQUEST_TIMEOUT = 30
+
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_REQUEST_TIMEOUT = 30
