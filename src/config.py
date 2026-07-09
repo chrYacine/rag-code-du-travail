@@ -35,6 +35,8 @@ VECTOR_STORE_METADATA_FILE = VECTOR_STORE_DIR / "vector_store_metadata.json"
 BM25_K1 = float(os.getenv("BM25_K1", "1.5"))
 BM25_B = float(os.getenv("BM25_B", "0.75"))
 BM25_ARTICLE_ID_BOOST = float(os.getenv("BM25_ARTICLE_ID_BOOST", "5.0"))
+HYBRID_ALPHA = float(os.getenv("HYBRID_ALPHA", "0.7"))
+HYBRID_BETA = float(os.getenv("HYBRID_BETA", "0.3"))
 TOP_K = int(os.getenv("TOP_K", "5"))
 
 REQUEST_TIMEOUT = 30
