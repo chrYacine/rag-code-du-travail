@@ -104,6 +104,54 @@ python src/download_code_travail.py
 
 Apres execution, verifier que les fichiers JSON attendus existent dans `data/raw/` et `data/metadata/`.
 
+### Mise a jour hybride du corpus
+
+La recuperation du corpus fonctionne en mode hybride: elle peut etre lancee manuellement par un membre de l'equipe ou automatiquement via GitHub Actions. Dans les deux cas, le script commence par verifier si la source distante a change avant de preparer la suite du pipeline.
+
+Le choix technique retenu est un hash SHA256 calcule sur le contenu distant telecharge. Ce hash est compare au dernier hash conserve dans `data/metadata/code_du_travail_metadata.json`. Cette methode est simple, robuste et reproductible: elle evite de relancer inutilement l'extraction, le chunking, le nettoyage et l'indexation quand le fichier source est identique.
+
+Methodologie appliquee:
+
+- telecharger la source distante avec un timeout reseau;
+- valider le statut HTTP et le JSON;
+- calculer le hash SHA256 du contenu distant;
+- comparer ce hash avec les metadonnees locales;
+- ne pas reecrire le fichier brut si aucune modification n'est detectee;
+- mettre a jour le fichier brut et les metadonnees si la source change;
+- retourner un statut exploitable par les futurs modules du pipeline;
+- conserver la possibilite de forcer la regeneration avec `--force`.
+
+Le mode force sert aux cas ou l'equipe veut regenerer volontairement le corpus local, par exemple apres une modification du code de preparation, un doute sur l'etat local ou un test d'integration. Il ne doit pas etre le mode normal d'execution automatisee.
+
+Le workflow `.github/workflows/update_code_travail.yml` lance une verification automatique tous les matins avec le cron `0 5 * * *`. Les cron GitHub Actions sont en UTC: 5h UTC correspond environ a 7h en France en heure d'ete, et l'heure locale peut varier avec le passage heure d'ete / heure d'hiver. Le workflow peut aussi etre lance manuellement depuis l'onglet Actions de GitHub grace a `workflow_dispatch`.
+
+Comme les gros fichiers JSON ne sont pas versionnes, le workflow utilise un cache GitHub Actions pour restaurer les dernieres metadonnees et permettre la comparaison de hash entre deux executions. Ce cache sert uniquement a eviter des traitements inutiles dans l'automatisation; la source de reference reste le JSON distant SocialGouv/legi-data et, juridiquement, Legifrance.
+
+### Messages de statut
+
+Chaque execution affiche un etat clair dans le terminal. Les messages couvrent les cas importants pour l'equipe:
+
+- initialisation du corpus quand aucune version locale precedente n'est detectee;
+- telechargement distant reussi;
+- aucune modification detectee;
+- mise a jour detectee;
+- mode force active;
+- erreur reseau, HTTP ou JSON;
+- fin de traitement avec succes.
+
+Cette logique permet de savoir rapidement si le corpus est a jour, si une action manuelle est necessaire, ou si le pipeline peut continuer vers le chunking et l'indexation.
+
+Le script retourne aussi un dictionnaire de statut exploitable par les futures briques Python. Exemples de statuts: `updated`, `unchanged`, `forced` ou `error`.
+
+### Commandes utiles
+
+```bash
+python src/download_code_travail.py
+python src/download_code_travail.py --force
+```
+
+La premiere commande verifie la source et ne met a jour le corpus local que si le hash distant a change. La seconde force la regeneration locale, meme si aucun changement n'est detecte.
+
 ### Suite prevue
 
 - Finaliser l'extraction des articles.

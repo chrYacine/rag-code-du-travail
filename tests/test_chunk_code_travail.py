@@ -33,7 +33,8 @@ def test_extract_article_chunks_returns_expected_structure() -> None:
     chunk = chunks[0]
     assert chunk["id"] == "LEGIARTI000006902580"
     assert chunk["article_num"] == "L3121-1"
-    assert chunk["article_id"] == "LEGIARTI000006902580"
+    assert chunk["article_id"] == "L3121-1"
+    assert chunk["legi_id"] == "LEGIARTI000006902580"
     assert chunk["theme"] == "duree du travail et heures supplementaires"
     assert chunk["fil_ariane"] == "Code du travail > Durée du travail"
     assert chunk["content"].startswith("Article L3121-1")
@@ -51,8 +52,17 @@ def test_clean_text_removes_basic_html() -> None:
 
 
 def test_infer_theme_uses_article_ranges() -> None:
-    assert infer_theme("L3141-10") == "conges payes"
-    assert infer_theme("L1232-1") == "licenciement"
-    assert infer_theme("L1237-11") == "rupture conventionnelle"
     assert infer_theme("L1152-1") == "harcelement et discrimination"
+    assert infer_theme("L1221-1") == "contrat de travail"
+    assert infer_theme("L1221-19") == "rupture de la periode d'essai"
+    assert infer_theme("L1221-26") == "rupture de la periode d'essai"
+    assert infer_theme("L1232-1") == "licenciement"
+    assert infer_theme("L1237-10") == "licenciement"
+    assert infer_theme("L1237-11") == "rupture conventionnelle"
+    assert infer_theme("L1237-19") == "rupture conventionnelle"
+    assert infer_theme("L1237-20") == "licenciement"
+    assert infer_theme("L2311-1") == "representation du personnel"
+    assert infer_theme("L3121-10") == "duree du travail et heures supplementaires"
+    assert infer_theme("L3141-10") == "conges payes"
+    assert infer_theme("L3231-1") == "salaire minimum smic"
     assert infer_theme("L9999-1") is None

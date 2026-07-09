@@ -11,14 +11,15 @@ except ModuleNotFoundError:  # pragma: no cover - script execution fallback
 
 
 THEME_ARTICLE_RANGES: dict[str, tuple[str, str]] = {
+    "rupture de la periode d'essai": ("L1221-19", "L1221-26"),
     "rupture conventionnelle": ("L1237-11", "L1237-19"),
     "licenciement": ("L1231-1", "L1237-20"),
+    "harcelement et discrimination": ("L1152-1", "L1155-2"),
+    "representation du personnel": ("L2311-1", "L2316-26"),
     "duree du travail et heures supplementaires": ("L3121-1", "L3121-36"),
     "conges payes": ("L3141-1", "L3141-32"),
+    "salaire minimum smic": ("L3231-1", "L3232-9"),
     "contrat de travail": ("L1221-1", "L1248-11"),
-    "salaire minimum": ("L3231-1", "L3232-9"),
-    "representation du personnel": ("L2311-1", "L2316-26"),
-    "harcelement et discrimination": ("L1152-1", "L1155-2"),
 }
 
 
@@ -85,23 +86,25 @@ def extract_article_chunks(
         if node_type == "article" and isinstance(article_num, str):
             text = clean_text(node_data.get("texte") or node_data.get("texteHtml"))
             if text:
+                legi_id = str(
+                    node_data.get("id") or node_data.get("cid") or article_num
+                )
                 fil_ariane = normalize_fil_ariane(next_path)
                 content = f"Article {article_num}\n{text}"
                 chunks.append(
                     {
-                        "id": node_data.get("id")
-                        or node_data.get("cid")
-                        or article_num,
+                        "id": legi_id,
                         "article_num": article_num,
-                        "article_id": node_data.get("id"),
-                        "theme": infer_theme(article_num),
+                        "article_id": article_num,
+                        "legi_id": legi_id,
+                        "theme": infer_theme(article_num) or "",
                         "fil_ariane": fil_ariane,
                         "content": content,
                         "source": TECHNICAL_SOURCE,
                         "primary_source": PRIMARY_SOURCE,
                         "code_id": CODE_TRAVAIL_ID,
-                        "retrieved_at": retrieved_at,
-                        "etat": node_data.get("etat"),
+                        "retrieved_at": retrieved_at or "",
+                        "etat": str(node_data.get("etat") or ""),
                     }
                 )
 
