@@ -6,7 +6,13 @@ from typing import Any, Mapping, Sequence
 
 import requests
 
-from src.config import GROQ_API_URL, GROQ_MODEL, GROQ_REQUEST_TIMEOUT
+from src.config import (
+    GROQ_API_URL,
+    GROQ_MAX_TOKENS,
+    GROQ_MODEL,
+    GROQ_REQUEST_TIMEOUT,
+    GROQ_TEMPERATURE,
+)
 
 
 class GroqClientError(RuntimeError):
@@ -21,6 +27,8 @@ class GroqClient:
     model: str = GROQ_MODEL
     api_url: str = GROQ_API_URL
     timeout: int = GROQ_REQUEST_TIMEOUT
+    temperature: float = GROQ_TEMPERATURE
+    max_tokens: int = GROQ_MAX_TOKENS
 
     def __post_init__(self) -> None:
         self.api_key = self.api_key or os.getenv("GROQ_API_KEY")
@@ -29,6 +37,10 @@ class GroqClient:
                 "Clé GROQ_API_KEY manquante. "
                 "Ajoutez votre clé dans le fichier .env local."
             )
+        if not 0 <= self.temperature <= 2:
+            raise GroqClientError("GROQ_TEMPERATURE doit être comprise entre 0 et 2.")
+        if self.max_tokens < 1:
+            raise GroqClientError("GROQ_MAX_TOKENS doit être supérieur ou égal à 1.")
 
     def generate(self, messages: Sequence[Mapping[str, str]]) -> str:
         payload_messages = self._validate_messages(messages)
@@ -40,7 +52,12 @@ class GroqClient:
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
                 },
-                json={"model": self.model, "messages": payload_messages},
+                json={
+                    "model": self.model,
+                    "messages": payload_messages,
+                    "temperature": self.temperature,
+                    "max_tokens": self.max_tokens,
+                },
                 timeout=self.timeout,
             )
             response.raise_for_status()

@@ -35,5 +35,7 @@ VECTOR_STORE_METADATA_FILE = VECTOR_STORE_DIR / "vector_store_metadata.json"
 REQUEST_TIMEOUT = 30
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_TEMPERATURE = float(os.getenv("GROQ_TEMPERATURE", "0.1"))
+GROQ_MAX_TOKENS = int(os.getenv("GROQ_MAX_TOKENS", "1200"))
 GROQ_REQUEST_TIMEOUT = 30
