@@ -221,3 +221,5 @@ __marimo__/
 data/raw/*.json
 data/processed/*.json
 data/metadata/*.json
+data/vector_store/*.faiss
+data/vector_store/*.json

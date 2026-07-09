@@ -176,6 +176,34 @@ Chaque entree contient:
 
 Seuls les articles en vigueur et appartenant aux themes retenus sont exportes vers `data/processed/`. Le JSON brut reste conserve dans `data/raw/` pour la tracabilite, mais il n'est pas indexe directement.
 
+### Base vectorielle FAISS
+
+La vectorisation n'utilise pas de LLM. Elle transforme les chunks en embeddings avec `sentence-transformers`, puis persiste ces vecteurs dans FAISS. Le modele par defaut est `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, choisi car il est multilingue, adapte au francais, plus leger que `paraphrase-multilingual-mpnet-base-v2`, et suffisant pour une premiere base RAG maintenable. Le modele reste configurable avec `EMBEDDING_MODEL`.
+
+FAISS ne stocke ni le texte ni les metadonnees. Pour eviter toute ambiguite, le projet sauvegarde donc une liste parallele dans:
+
+```text
+data/vector_store/chunks_metadata.json
+```
+
+L'ordre de cette liste correspond exactement a l'ordre des vecteurs dans l'index FAISS. Un resultat FAISS `i` permet donc de retrouver `chunks_metadata[i]`, puis de reconstruire un futur `RetrievedChunk`.
+
+Fichiers generes:
+
+```text
+data/vector_store/index.faiss
+data/vector_store/chunks_metadata.json
+data/vector_store/vector_store_metadata.json
+```
+
+La mise a jour est controlee par un hash SHA256 de `data/processed/chunks_code_du_travail.json`. Si les chunks n'ont pas change et que les fichiers FAISS existent deja, la base vectorielle n'est pas reconstruite. Le mode `--force` permet de reconstruire volontairement la base, par exemple apres un changement de modele d'embedding.
+
+```bash
+python src/retrieval/vector_store.py
+python src/retrieval/vector_store.py --force
+python src/retrieval/vector_store.py --model sentence-transformers/paraphrase-multilingual-mpnet-base-v2
+```
+
 ### Suite prevue
 
 - Finaliser l'extraction des articles.
