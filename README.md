@@ -294,6 +294,28 @@ Commande de verification locale:
 python src/retrieval/hybrid_retriever.py "Que dit l'article L1237-11 ?" --top-k 3
 ```
 
+### Interrogation en ligne de commande
+
+Le script `src/query_code_travail.py` permet d'interroger le pipeline RAG complet
+sans passer par Streamlit et sans reconstruire l'index FAISS.
+
+```bash
+python src/query_code_travail.py "Que dit l'article L1237-11 ?" --top-k 3
+```
+
+Le script charge la factory applicative, utilise le retrieval hybride, appelle
+Groq via la configuration locale et affiche:
+
+- la reponse;
+- les sources;
+- les articles;
+- les scores vectoriel, BM25 et hybride;
+- l'avertissement juridique.
+
+Les cas de validation du retrieval sont documentes dans
+`docs/retrieval_validation.md`. Les notes techniques pour le README final et le
+compte rendu sont dans `docs/retrieval_technical_notes.md`.
+
 ### Suite prevue
 
 - Finaliser l'extraction des articles.
