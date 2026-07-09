@@ -62,12 +62,12 @@ def normalize_fil_ariane(parts: Iterable[str]) -> str:
     return " > ".join(cleaned_parts)
 
 
-def article_sort_key(article_num: str) -> tuple[str, int, int]:
-    match = re.fullmatch(r"([A-Z])(\d+)-(\d+)", article_num.strip())
+def article_sort_key(article_num: str) -> tuple[str, tuple[int, ...]]:
+    match = re.fullmatch(r"([A-Z])(\d+(?:-\d+)*)", article_num.strip())
     if not match:
-        return (article_num, -1, -1)
-    prefix, book_number, article_number = match.groups()
-    return (prefix, int(book_number), int(article_number))
+        return (article_num, ())
+    prefix, article_numbers = match.groups()
+    return (prefix, tuple(int(part) for part in article_numbers.split("-")))
 
 
 def is_article_between(article_num: str, start: str, end: str) -> bool:

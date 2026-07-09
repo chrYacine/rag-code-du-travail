@@ -117,6 +117,7 @@ def build_parallel_metadata(chunks: list[dict[str, Any]]) -> list[dict[str, Any]
 def should_rebuild_vector_store(
     *,
     chunks_hash: str,
+    embedding_model: str,
     index_path: Path,
     chunks_metadata_path: Path,
     vector_metadata_path: Path,
@@ -132,7 +133,10 @@ def should_rebuild_vector_store(
     if not metadata:
         return True
 
-    return metadata.get("chunks_hash_sha256") != chunks_hash
+    return (
+        metadata.get("chunks_hash_sha256") != chunks_hash
+        or metadata.get("embedding_model") != embedding_model
+    )
 
 
 def load_embedding_model(model_name: str) -> Any:
@@ -226,6 +230,7 @@ def build_vector_store(
 
     if not should_rebuild_vector_store(
         chunks_hash=chunks_hash,
+        embedding_model=embedding_model,
         index_path=index_path,
         chunks_metadata_path=chunks_metadata_path,
         vector_metadata_path=vector_metadata_path,
