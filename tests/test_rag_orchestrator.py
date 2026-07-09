@@ -34,7 +34,9 @@ class FakeLLMClient:
 
     def generate(self, messages: Sequence[Mapping[str, str]]) -> str:
         self.messages = messages
-        return "Selon l'article L1234-1, la rupture doit respecter les conditions prevues."
+        return (
+            "Selon l'article L1234-1, la rupture doit respecter les conditions prevues."
+        )
 
 
 class AllowAllModerator:

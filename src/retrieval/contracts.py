@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Mapping, Protocol, Sequence
+from typing import Mapping, Protocol, Sequence, runtime_checkable
 
 
 @dataclass(frozen=True)
@@ -28,3 +28,17 @@ class RetrievalEngine(Protocol):
         hybrid formula such as alpha * vector_score + beta * bm25_score.
         Optional score components can be exposed through `score_details`.
         """
+
+
+@runtime_checkable
+class QueryAwareRetrievalEngine(RetrievalEngine, Protocol):
+    """Retrieval engine supporting distinct lexical and vector queries."""
+
+    def search_with_queries(
+        self,
+        *,
+        original_query: str,
+        vector_query: str,
+        top_k: int,
+    ) -> Sequence[RetrievedChunk]:
+        """Search BM25 with the original query and FAISS with the vector query."""

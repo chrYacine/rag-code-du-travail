@@ -5,6 +5,7 @@ from typing import Mapping, Sequence
 
 import pytest
 
+import src.app_factory as app_factory
 from src.app_factory import build_rag_service
 from src.moderation.contracts import ModerationResult
 from src.retrieval.contracts import RetrievedChunk
@@ -58,3 +59,21 @@ def test_top_k_must_be_positive() -> None:
             input_moderator=FakeModerator(),
             top_k=0,
         )
+
+
+def test_default_retrieval_engine_is_hybrid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    retriever = FakeRetrievalEngine()
+    monkeypatch.setattr(
+        app_factory,
+        "HybridRetrievalEngine",
+        lambda: retriever,
+    )
+
+    service = build_rag_service(
+        llm_client=FakeLLMClient(),
+        input_moderator=FakeModerator(),
+    )
+
+    assert service.retrieval_engine is retriever
