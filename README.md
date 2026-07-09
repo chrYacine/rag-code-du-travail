@@ -148,9 +148,33 @@ Le script retourne aussi un dictionnaire de statut exploitable par les futures b
 ```bash
 python src/download_code_travail.py
 python src/download_code_travail.py --force
+python src/chunk_code_travail.py
 ```
 
 La premiere commande verifie la source et ne met a jour le corpus local que si le hash distant a change. La seconde force la regeneration locale, meme si aucun changement n'est detecte.
+
+### Chunking par article
+
+Le chunking cible le format attendu par le moteur de retrieval et par le contrat `RetrievedChunk`. La strategie retenue est volontairement simple et explicable en soutenance: un chunk correspond a un article complet. Le code ne coupe pas les articles en fragments internes, afin de conserver le sens juridique et les citations.
+
+Le fichier genere est:
+
+```text
+data/processed/chunks_code_du_travail.json
+```
+
+Chaque entree contient:
+
+- `id`: identifiant technique Legifrance `LEGIARTI...`;
+- `content`: texte complet sous la forme `Article Lxxxx-x\n...`;
+- `metadata.article_id`: numero lisible de l'article, utilise pour les citations;
+- `metadata.legi_id`: identifiant technique;
+- `metadata.section`: fil d'Ariane;
+- `metadata.theme`: theme fonctionnel du RAG;
+- `metadata.etat`: statut juridique, filtre sur `VIGUEUR`;
+- `metadata.source`, `metadata.primary_source`, `metadata.code_id`, `metadata.retrieved_at`.
+
+Seuls les articles en vigueur et appartenant aux themes retenus sont exportes vers `data/processed/`. Le JSON brut reste conserve dans `data/raw/` pour la tracabilite, mais il n'est pas indexe directement.
 
 ### Suite prevue
 

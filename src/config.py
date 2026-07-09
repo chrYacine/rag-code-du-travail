@@ -18,5 +18,6 @@ METADATA_DIR = PROJECT_ROOT / "data" / "metadata"
 
 RAW_CODE_TRAVAIL_FILE = RAW_DATA_DIR / "code_du_travail.json"
 METADATA_CODE_TRAVAIL_FILE = METADATA_DIR / "code_du_travail_metadata.json"
+PROCESSED_CHUNKS_FILE = PROCESSED_DATA_DIR / "chunks_code_du_travail.json"
 
 REQUEST_TIMEOUT = 30

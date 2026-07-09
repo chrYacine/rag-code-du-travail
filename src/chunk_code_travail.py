@@ -1,13 +1,32 @@
 from __future__ import annotations
 
+import json
+import logging
 import re
 from html import unescape
+from pathlib import Path
 from typing import Any, Iterable
 
 try:
-    from src.config import CODE_TRAVAIL_ID, PRIMARY_SOURCE, TECHNICAL_SOURCE
+    from src.config import (
+        CODE_TRAVAIL_ID,
+        METADATA_CODE_TRAVAIL_FILE,
+        PRIMARY_SOURCE,
+        PROCESSED_CHUNKS_FILE,
+        RAW_CODE_TRAVAIL_FILE,
+        TECHNICAL_SOURCE,
+    )
 except ModuleNotFoundError:  # pragma: no cover - script execution fallback
-    from config import CODE_TRAVAIL_ID, PRIMARY_SOURCE, TECHNICAL_SOURCE  # type: ignore
+    from config import (  # type: ignore
+        CODE_TRAVAIL_ID,
+        METADATA_CODE_TRAVAIL_FILE,
+        PRIMARY_SOURCE,
+        PROCESSED_CHUNKS_FILE,
+        RAW_CODE_TRAVAIL_FILE,
+        TECHNICAL_SOURCE,
+    )
+
+logger = logging.getLogger(__name__)
 
 
 THEME_ARTICLE_RANGES: dict[str, tuple[str, str]] = {
@@ -113,3 +132,90 @@ def extract_article_chunks(
 
     visit(data, [])
     return chunks
+
+
+def is_indexable_chunk(chunk: dict[str, Any]) -> bool:
+    return chunk.get("etat") == "VIGUEUR" and bool(chunk.get("theme"))
+
+
+def to_processed_chunk(chunk: dict[str, Any]) -> dict[str, Any]:
+    metadata = {
+        "article_id": str(chunk.get("article_id") or ""),
+        "legi_id": str(chunk.get("legi_id") or chunk.get("id") or ""),
+        "section": str(chunk.get("fil_ariane") or ""),
+        "theme": str(chunk.get("theme") or ""),
+        "etat": str(chunk.get("etat") or ""),
+        "source": str(chunk.get("source") or TECHNICAL_SOURCE),
+        "primary_source": str(chunk.get("primary_source") or PRIMARY_SOURCE),
+        "code_id": str(chunk.get("code_id") or CODE_TRAVAIL_ID),
+        "retrieved_at": str(chunk.get("retrieved_at") or ""),
+    }
+
+    return {
+        "id": metadata["legi_id"],
+        "content": str(chunk.get("content") or ""),
+        "metadata": metadata,
+    }
+
+
+def build_processed_chunks(
+    data: dict[str, Any], retrieved_at: str | None = None
+) -> list[dict[str, Any]]:
+    raw_chunks = extract_article_chunks(data, retrieved_at=retrieved_at)
+    return [
+        to_processed_chunk(chunk) for chunk in raw_chunks if is_indexable_chunk(chunk)
+    ]
+
+
+def read_json_file(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def read_retrieved_at(metadata_path: Path) -> str:
+    if not metadata_path.exists():
+        return ""
+
+    metadata = read_json_file(metadata_path)
+    if not isinstance(metadata, dict):
+        return ""
+    return str(metadata.get("retrieved_at") or "")
+
+
+def write_processed_chunks(path: Path, chunks: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(chunks, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def generate_chunks(
+    *,
+    raw_path: Path = RAW_CODE_TRAVAIL_FILE,
+    metadata_path: Path = METADATA_CODE_TRAVAIL_FILE,
+    output_path: Path = PROCESSED_CHUNKS_FILE,
+) -> dict[str, Any]:
+    data = read_json_file(raw_path)
+    if not isinstance(data, dict):
+        raise ValueError("Le fichier brut doit contenir un objet JSON racine.")
+
+    retrieved_at = read_retrieved_at(metadata_path)
+    chunks = build_processed_chunks(data, retrieved_at=retrieved_at)
+    write_processed_chunks(output_path, chunks)
+
+    themes = sorted({chunk["metadata"]["theme"] for chunk in chunks})
+    status = {
+        "status": "success",
+        "chunks_count": len(chunks),
+        "themes_count": len(themes),
+        "themes": themes,
+        "output_path": str(output_path),
+    }
+    logger.info(
+        "Chunking terminé: %s chunks écrits dans %s.",
+        status["chunks_count"],
+        output_path,
+    )
+    return status
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
+    generate_chunks()
