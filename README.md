@@ -228,6 +228,32 @@ Commande de verification locale:
 python src/retrieval/vector_retriever.py "Quelle est la duree legale du travail ?" --top-k 3
 ```
 
+### Retrieval BM25
+
+Le moteur `BM25RetrievalEngine` interroge les chunks textuels avec BM25 Okapi, sans modele LLM et sans dependance externe. Il est prevu pour recevoir la question originale de l'utilisateur ou la sous-question originale produite par l'orchestrateur, tandis que FAISS peut recevoir la variante HyDE.
+
+Le moteur lit par defaut:
+
+```text
+data/processed/chunks_code_du_travail.json
+```
+
+Chaque resultat est un `RetrievedChunk` avec:
+
+- `content`: texte complet du chunk;
+- `score`: score BM25 utilise pour le classement;
+- `metadata["article_id"]`: numero lisible de l'article;
+- `metadata["legi_id"]`: identifiant technique `LEGIARTI...`;
+- `score_details["bm25_score"]`: detail du score BM25.
+
+Les recherches contenant un numero d'article, par exemple `L1237-11`, recoivent un bonus controle pour faire remonter l'article exact. Cela aide les questions directes du type "Que dit l'article L1237-11 ?".
+
+Commande de verification locale:
+
+```bash
+python src/retrieval/bm25_retriever.py "Que dit l'article L1237-11 ?" --top-k 3
+```
+
 ### Suite prevue
 
 - Finaliser l'extraction des articles.

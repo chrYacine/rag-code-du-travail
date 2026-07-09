@@ -32,6 +32,10 @@ VECTOR_INDEX_FILE = VECTOR_STORE_DIR / "index.faiss"
 VECTOR_CHUNKS_METADATA_FILE = VECTOR_STORE_DIR / "chunks_metadata.json"
 VECTOR_STORE_METADATA_FILE = VECTOR_STORE_DIR / "vector_store_metadata.json"
 
+BM25_K1 = float(os.getenv("BM25_K1", "1.5"))
+BM25_B = float(os.getenv("BM25_B", "0.75"))
+BM25_ARTICLE_ID_BOOST = float(os.getenv("BM25_ARTICLE_ID_BOOST", "5.0"))
+
 REQUEST_TIMEOUT = 30
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
