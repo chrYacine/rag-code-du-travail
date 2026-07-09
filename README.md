@@ -196,12 +196,36 @@ data/vector_store/chunks_metadata.json
 data/vector_store/vector_store_metadata.json
 ```
 
-La mise a jour est controlee par un hash SHA256 de `data/processed/chunks_code_du_travail.json`. Si les chunks n'ont pas change et que les fichiers FAISS existent deja, la base vectorielle n'est pas reconstruite. Le mode `--force` permet de reconstruire volontairement la base, par exemple apres un changement de modele d'embedding.
+La mise a jour est controlee par un hash SHA256 de `data/processed/chunks_code_du_travail.json` et par le nom du modele d'embedding enregistre dans `data/vector_store/vector_store_metadata.json`. Si les chunks et le modele n'ont pas change et que les fichiers FAISS existent deja, la base vectorielle n'est pas reconstruite. Si le modele change, l'index est reconstruit automatiquement pour eviter d'interroger des vecteurs produits avec un autre modele. Le mode `--force` permet de reconstruire volontairement la base, par exemple apres un doute sur l'etat local.
 
 ```bash
 python src/retrieval/vector_store.py
 python src/retrieval/vector_store.py --force
 python src/retrieval/vector_store.py --model sentence-transformers/paraphrase-multilingual-mpnet-base-v2
+```
+
+### Retrieval vectoriel
+
+Le moteur `VectorRetrievalEngine` charge l'index FAISS, la liste parallele `chunks_metadata.json` et les metadonnees du vector store. Il utilise toujours le modele d'embedding enregistre avec l'index, afin de garantir que la question est encodee avec le meme modele que les chunks.
+
+Le contrat expose reste celui attendu par l'orchestration:
+
+```python
+retrieval_engine.search(question: str, top_k: int)
+```
+
+Chaque resultat est un `RetrievedChunk` avec:
+
+- `content`: texte complet du chunk;
+- `score`: score vectoriel FAISS utilise pour le classement;
+- `metadata["article_id"]`: numero lisible de l'article, par exemple `L3121-1`;
+- `metadata["legi_id"]`: identifiant technique `LEGIARTI...`;
+- `score_details["vector_score"]`: detail du score vectoriel.
+
+Commande de verification locale:
+
+```bash
+python src/retrieval/vector_retriever.py "Quelle est la duree legale du travail ?" --top-k 3
 ```
 
 ### Suite prevue

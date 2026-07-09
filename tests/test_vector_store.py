@@ -65,11 +65,15 @@ def test_should_rebuild_vector_store_detects_unchanged_store(tmp_path: Path) -> 
     vector_metadata_path = tmp_path / "vector_store_metadata.json"
     index_path.write_bytes(b"index")
     write_json(chunks_metadata_path, [])
-    write_json(vector_metadata_path, {"chunks_hash_sha256": "abc"})
+    write_json(
+        vector_metadata_path,
+        {"chunks_hash_sha256": "abc", "embedding_model": "fake-model"},
+    )
 
     assert (
         should_rebuild_vector_store(
             chunks_hash="abc",
+            embedding_model="fake-model",
             index_path=index_path,
             chunks_metadata_path=chunks_metadata_path,
             vector_metadata_path=vector_metadata_path,
@@ -84,11 +88,40 @@ def test_should_rebuild_vector_store_when_hash_changes(tmp_path: Path) -> None:
     vector_metadata_path = tmp_path / "vector_store_metadata.json"
     index_path.write_bytes(b"index")
     write_json(chunks_metadata_path, [])
-    write_json(vector_metadata_path, {"chunks_hash_sha256": "old"})
+    write_json(
+        vector_metadata_path,
+        {"chunks_hash_sha256": "old", "embedding_model": "fake-model"},
+    )
 
     assert (
         should_rebuild_vector_store(
             chunks_hash="new",
+            embedding_model="fake-model",
+            index_path=index_path,
+            chunks_metadata_path=chunks_metadata_path,
+            vector_metadata_path=vector_metadata_path,
+        )
+        is True
+    )
+
+
+def test_should_rebuild_vector_store_when_embedding_model_changes(
+    tmp_path: Path,
+) -> None:
+    index_path = tmp_path / "index.faiss"
+    chunks_metadata_path = tmp_path / "chunks_metadata.json"
+    vector_metadata_path = tmp_path / "vector_store_metadata.json"
+    index_path.write_bytes(b"index")
+    write_json(chunks_metadata_path, [])
+    write_json(
+        vector_metadata_path,
+        {"chunks_hash_sha256": "abc", "embedding_model": "old-model"},
+    )
+
+    assert (
+        should_rebuild_vector_store(
+            chunks_hash="abc",
+            embedding_model="new-model",
             index_path=index_path,
             chunks_metadata_path=chunks_metadata_path,
             vector_metadata_path=vector_metadata_path,
@@ -101,6 +134,7 @@ def test_should_rebuild_vector_store_when_force_is_enabled(tmp_path: Path) -> No
     assert (
         should_rebuild_vector_store(
             chunks_hash="abc",
+            embedding_model="fake-model",
             index_path=tmp_path / "index.faiss",
             chunks_metadata_path=tmp_path / "chunks_metadata.json",
             vector_metadata_path=tmp_path / "metadata.json",
@@ -190,7 +224,10 @@ def test_build_vector_store_skips_when_chunks_are_unchanged(
     index_path.parent.mkdir(parents=True, exist_ok=True)
     index_path.write_bytes(b"index")
     write_json(chunks_metadata_path, [])
-    write_json(vector_metadata_path, {"chunks_hash_sha256": chunks_hash})
+    write_json(
+        vector_metadata_path,
+        {"chunks_hash_sha256": chunks_hash, "embedding_model": "fake-model"},
+    )
 
     def fail_if_called(model_name: str) -> object:
         raise AssertionError("model should not be loaded when chunks are unchanged")
@@ -198,6 +235,7 @@ def test_build_vector_store_skips_when_chunks_are_unchanged(
     monkeypatch.setattr(vector_store, "load_embedding_model", fail_if_called)
 
     status = build_vector_store(
+        embedding_model="fake-model",
         chunks_path=chunks_path,
         index_path=index_path,
         chunks_metadata_path=chunks_metadata_path,
