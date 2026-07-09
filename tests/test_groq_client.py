@@ -61,8 +61,14 @@ def test_missing_api_key_is_rejected(
 ) -> None:
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
 
-    with pytest.raises(GroqClientError, match="GROQ_API_KEY"):
+    expected_message = (
+        "Clé GROQ_API_KEY manquante. " "Ajoutez votre clé dans le fichier .env local."
+    )
+
+    with pytest.raises(GroqClientError, match="GROQ_API_KEY") as error:
         GroqClient()
+
+    assert str(error.value) == expected_message
 
 
 def test_empty_messages_are_rejected() -> None:

@@ -26,7 +26,8 @@ class GroqClient:
         self.api_key = self.api_key or os.getenv("GROQ_API_KEY")
         if not self.api_key:
             raise GroqClientError(
-                "La variable d'environnement GROQ_API_KEY est absente."
+                "Clé GROQ_API_KEY manquante. "
+                "Ajoutez votre clé dans le fichier .env local."
             )
 
     def generate(self, messages: Sequence[Mapping[str, str]]) -> str:
